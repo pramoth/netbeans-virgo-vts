@@ -5,6 +5,9 @@
 package th.co.geniustree.virgo.server.api;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.security.KeyStore;
+import java.security.SecureRandom;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -14,11 +17,15 @@ import java.util.logging.Logger;
 import javax.management.MBeanServerConnection;
 import javax.management.ObjectName;
 import javax.management.remote.JMXConnector;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 import org.netbeans.api.extexecution.ExecutionDescriptor;
 import org.netbeans.api.extexecution.ExecutionService;
 import org.netbeans.api.extexecution.ExternalProcessBuilder;
 import th.co.geniustree.virgo.server.InstanceChecker;
 import th.co.geniustree.virgo.server.JmxConnectorHelper;
+import th.co.geniustree.virgo.server.MyEmptyX509TrustManager;
 import th.co.geniustree.virgo.server.VirgoServerInstanceImplementation;
 
 /**
@@ -36,6 +43,7 @@ public class StartCommand {
     public void start(boolean clean) {
         instance.starting();
         String virgoRoot = (String) instance.getAttr().get(Constants.VIRGO_ROOT);
+        registerTrustore(virgoRoot);
         if (virgoRoot != null) {
             File virgoBinaryFolder = new File(virgoRoot, "bin");
             if (virgoBinaryFolder.exists()) {
@@ -67,7 +75,7 @@ public class StartCommand {
     }
 
     private void checkServerStatus() {
-        Executors.newCachedThreadPool().execute(new InstanceChecker(instance,10));
+        Executors.newCachedThreadPool().execute(new InstanceChecker(instance, 10));
     }
 
     private JMXConnector checkServerStatusAndWait() {
@@ -126,5 +134,23 @@ public class StartCommand {
                 Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Virgo stopped.");
             }
         });
+    }
+
+    private void registerTrustore(String virgoRoot) {
+        File keystore = new File(new File(virgoRoot), "configuration/keystore");
+        if (!keystore.exists()) {
+            throw new IllegalStateException("Not found keystore at ${VERGO_HOME}/configuration/keystore");
+        }
+        try (FileInputStream in = new FileInputStream(keystore)) {
+            KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+            keyStore.load(in, "changeit".toCharArray());
+            TrustManagerFactory tmf= TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            tmf.init(keyStore);
+            SSLContext ctx = SSLContext.getInstance("SSL");
+            ctx.init(null, tmf.getTrustManagers(), new SecureRandom());
+            SSLContext.setDefault(ctx);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

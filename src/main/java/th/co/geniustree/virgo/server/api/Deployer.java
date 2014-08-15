@@ -54,6 +54,7 @@ public class Deployer {
                 String[] signature = {"java.lang.String", "boolean"};
                 // invoke the execute method of the Deployer MBean
                 mBeanServerConnection.invoke(name, "deploy", params, signature);
+                instance.started();
             } catch (IOException iOException) {
                 Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Can't connect Virgo JMX.", iOException);
                 instance.stoped();

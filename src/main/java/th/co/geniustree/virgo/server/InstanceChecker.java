@@ -49,6 +49,7 @@ public class InstanceChecker implements Runnable {
                     break;
                 }
             } catch (Exception ex) {
+                ex.printStackTrace();
                 Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Can't call JMX reason = {0} Thread={1}", new Object[]{ex.getMessage(), Thread.currentThread()});
                 JmxConnectorHelper.silentClose(createConnector);
             } finally {
