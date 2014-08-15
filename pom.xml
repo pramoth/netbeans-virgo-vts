@@ -15,7 +15,7 @@
                 <configuration>
                     <publicPackages>
                         <publicPackage>
-                            th.co.geniustree.virgo.vts.api.*
+                            th.co.geniustree.virgo.server.api.*
                         </publicPackage>
                     </publicPackages>
                 </configuration>
